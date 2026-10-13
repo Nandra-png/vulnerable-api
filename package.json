@@ -1,0 +1,14 @@
+{
+  "name": "vulnerable-api",
+  "version": "1.0.0",
+  "main": "v2-fixed/server.js",
+  "scripts": {
+    "old": "node v1-old/server.js",
+    "fixed": "node v2-fixed/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "sqlite3": "^5.1.7"
+  }
+}
