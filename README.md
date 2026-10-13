@@ -1,10 +1,11 @@
 # vulnerable-api
 
-api login express, sengaja dibikin bolong buat ngetes seberapa gampang dibobol, terus versi yang udah dibenerin ada di folder sebelah
+Express login API, intentionally left insecure. Fixed version sits next to it.
 
-2 folder:
-- `v1-old` — versi jelek, concat query, password plaintext, gak ada auth
-- `v2-fixed` — versi bener
+Two folders:
+
+- `v1-old` — string-concatenated queries, plaintext passwords, no auth
+- `v2-fixed` — hardened version
 
 ```
 npm install
@@ -12,29 +13,29 @@ npm run old
 npm run fixed
 ```
 
-dua duanya port 3000
+Both run on port 3000.
 
-## v1 celahnya
+## v1 flaws
 
-**sql injection**
+**SQL injection**
 
 ```js
 const query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'"
 ```
 
-masukin `admin' --` langsung jadi admin, karena `--` bikin sisanya jadi komentar
+Post `admin' --` and you're in as admin. The `--` comments out the password check.
 
-**password plaintext**
+**Plaintext passwords**
 
-`admin123` disimpen `admin123`, gak di hash sama sekali
+`admin123` stored as `admin123`. No hashing at all.
 
-**idor**
+**IDOR**
 
-`/user-old/:id` gak cek apa apa, ganti id jadi 2, 3, 4 keliling data orang
+`/user-old/:id` has no ownership check. Increment the id and you walk through everyone's data.
 
-## v2 perbaikannya
+## v2 fixes
 
-**parameterized query**
+**Parameterized queries**
 
 ```js
 db.get('SELECT * FROM users WHERE username = ?', [username], ...)
@@ -42,21 +43,21 @@ db.get('SELECT * FROM users WHERE username = ?', [username], ...)
 
 **bcrypt**
 
-hash di register, `bcrypt.compare` di login
+Hash on register, `bcrypt.compare` on login.
 
-**token + cek role**
+**Token + role check**
 
-header `x-token` wajib, non-admin cuma bisa liat datanya sendiri
+Requires `x-token` header. Non-admins can only read their own record.
 
-**validasi**
+**Input validation**
 
-id harus angka, kalo bukan langsung 400
+Id must parse as integer, otherwise 400.
 
-**pesan error disamain**
+**Matching error messages**
 
-username salah sama password salah pesannya sama, biar gak bisa dipake nebak username
+Wrong username and wrong password return the same message so usernames can't be enumerated.
 
-## tes
+## Test
 
 ```bash
 curl -X POST http://localhost:3000/login -H "Content-Type: application/json" -d "{\"username\":\"budi\",\"password\":\"budi123\"}"
@@ -66,11 +67,11 @@ curl -X POST http://localhost:3000/login -H "Content-Type: application/json" -d 
 curl -X POST http://localhost:3000/login-old -H "Content-Type: application/json" -d "{\"username\":\"admin' --\",\"password\":\"x\"}"
 ```
 
-di v1 masuk, di v2 ditolak
+First one fails on v1, passes on v2. Second one succeeds on v1, fails on v2.
 
-## todo
+## Todo
 
-- token masih di memori, restart hilang
-- belum ada rate limit
-- belum pake jwt
-- https belum
+- sessions held in memory, lost on restart
+- no rate limiting
+- no JWT yet
+- no HTTPS
